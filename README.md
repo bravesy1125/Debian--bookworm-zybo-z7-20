@@ -3,22 +3,27 @@
 sudo apt update
 sudo apt install qemu-user-static binfmt-support debootstrap
 
-#sudo mkdir Debian-bookworm-zybo-z7-20
-sudo debootstrap --arch=armhf --foreign bookworm Debian-bookworm-zybo-z7-20
-sudo cp /usr/bin/qemu-arm-static Debian-bookworm-zybo-z7-20/usr/bin/
+
+sudo rm -rf debian-zybo
+sudo mkdir debian-zybo
+sudo debootstrap --arch=armhf --foreign bookworm debian-zybo
+sudo cp /usr/bin/qemu-arm-static debian-zybo/usr/bin/
 
 
-sudo chroot Debian-bookworm-zybo-z7-20
-passwd
+sudo chroot debian-zybo
+
+
 ##########以下命令都是在chroot中执行###############
+
+export LANG=C
+/debootstrap/debootstrap --second-stage
+
 cat > /etc/fstab << EOF
 UUID=C579-5B55  /boot  vfat    defaults    0   2
 #UUID=ddb12389-4bf7-4dda-8fc0-660de97d4da7 /rootfs ext4  defaults  0 0
 EOF
 cat /etc/fstab 
 
-export LANG=C
-/debootstrap/debootstrap --second-stage
 cat  > /etc/apt/sources.list <<EOF
 deb http://deb.debian.org/debian bookworm main contrib non-free
 deb-src http://deb.debian.org/debian bookworm main contrib non-free
@@ -34,11 +39,11 @@ apt update
 apt install locales dialog
 dpkg-reconfigure locales
 
-apt install lsb-release vim openssh-server ntp ntpdate sudo ifupdown resolvconf net-tools udev iputils-ping wget dosfstools unzip binutils libatomic1 v4l-utils yavta curl snapd  lm-sensors
+apt install lsb-release gcc vim openssh-server ntp ntpdate sudo ifupdown resolvconf net-tools udev iputils-ping wget dosfstools unzip binutils libatomic1 v4l-utils yavta curl snapd  lm-sensors software-properties-common
 curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh |  bash
 apt-get install speedtest
 
-
+passwd
 
 cat > /etc/network/interfaces << EOF
 source /etc/network/interfaces.d/*
@@ -68,10 +73,10 @@ cd ..
 
 ########################到此为止#####################
 
-sudo rm Debian-bookworm-zybo-z7-20/usr/bin/qemu-arm-static
+sudo rm debian-zybo/usr/bin/qemu-arm-static
 
 sudo rm -rf /media/yongsh/rootfs/*
-sudo cp -r ~/Debian-bookworm-zybo-z7-20/* /media/yongsh/rootfs/ 
+sudo cp -r ~/debian-zybo/* /media/yongsh/rootfs/ 
 sync
 
 
@@ -88,6 +93,7 @@ usermod -aG sudo yongsh
 chown root:root /usr/bin/sudo
 chmod 4755 /usr/bin/sudo
 
+sudo dpkg-reconfigure tzdata
 ntpdate  pool.ntp.org
 
 ####################################################################
@@ -101,8 +107,8 @@ sync
 
 
 sudo tar -xvf debian116back.tar -C /media/yongsh/rootfs
-sudo tar -xvf debian116back.tar -C ~/Debian-bookworm-zybo-z7-20
+sudo tar -xvf debian116back.tar -C ~/debian-zybo
 sync 
 
-sudo cp -r ~/Debian-bookworm-zybo-z7-20/* /media/yongsh/rootfs
+sudo cp -r ~/debian-zybo/* /media/yongsh/rootfs
 sync
