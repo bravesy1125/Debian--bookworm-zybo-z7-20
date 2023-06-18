@@ -1,0 +1,130 @@
+# Build Debian latest rootfs
+
+sudo apt update
+sudo apt install qemu-user-static binfmt-support debootstrap
+
+
+sudo rm -rf debian-zybo-rootfs
+sudo mkdir debian-zybo-rootfs
+sudo debootstrap --arch=armhf --foreign bookworm debian-zybo-rootfs
+sudo cp /usr/bin/qemu-arm-static debian-zybo-rootfs/usr/bin/
+
+sudo chroot debian-zybo-rootfs
+
+
+
+########## execute in chroot ###############
+
+export LANG=C
+/debootstrap/debootstrap --second-stage
+
+cat > /etc/fstab << EOF
+UUID=C579-5B55  /boot  vfat    defaults    0   2
+#UUID=ddb12389-4bf7-4dda-8fc0-660de97d4da7 /rootfs ext4  defaults  0 0
+EOF
+cat /etc/fstab 
+
+cat  > /etc/apt/sources.list <<EOF
+deb https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
+# deb-src https://ftp.debian.org/debian/ bookworm contrib main non-free non-free-firmware
+deb https://ftp.debian.org/debian/ bookworm-updates contrib main non-free non-free-firmware
+# deb-src https://ftp.debian.org/debian/ bookworm-updates contrib main non-free non-free-firmware
+deb https://ftp.debian.org/debian/ bookworm-proposed-updates contrib main non-free non-free-firmware
+# deb-src https://ftp.debian.org/debian/ bookworm-proposed-updates contrib main non-free non-free-firmware
+deb https://ftp.debian.org/debian/ bookworm-backports contrib main non-free non-free-firmware
+# deb-src https://ftp.debian.org/debian/ bookworm-backports contrib main non-free non-free-firmware
+deb https://security.debian.org/debian-security/ bookworm-security contrib main non-free non-free-firmware
+# deb-src https://security.debian.org/debian-security/ bookworm-security contrib main non-free non-free-firmware
+EOF
+cat  /etc/apt/sources.list
+
+
+apt update
+apt install locales dialog
+dpkg-reconfigure locales
+
+apt install lsb-release gcc vim openssh-server ntp ntpdate sudo ifupdown resolvconf net-tools udev iputils-ping wget dosfstools unzip binutils libatomic1 v4l-utils yavta curl snapd  lm-sensors software-properties-common
+curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh |  bash
+apt-get install speedtest
+
+passwd # MUST change root's password here, otherwise, can not log in as root...
+
+cat > /etc/network/interfaces << EOF
+source /etc/network/interfaces.d/*
+auto end0
+allow-hotplug end0
+iface end0 inet static
+  address 192.168.0.33
+  netmask 255.255.255.0
+  gateway 192.168.0.1
+iface end0 inet6 dhcp
+EOF
+cat  /etc/network/interfaces 
+
+cat > /etc/network/interfaces << EOF
+source /etc/network/interfaces.d/*
+auto eth0
+allow-hotplug eth0
+iface eth0 inet static
+  address 192.168.0.33
+  netmask 255.255.255.0
+  gateway 192.168.0.1
+iface eth0 inet6 dhcp
+EOF
+cat  /etc/network/interfaces 
+
+
+echo Zybo-Z7-20 > /etc/hostname
+cat /etc/hostname
+
+cat >  /etc/hosts << EOF
+127.0.1.1 Zybo-Z7-20 zybo
+EOF
+cat   /etc/hosts 
+
+
+exit
+
+cd ..
+
+######################## out of chroot #####################
+
+sudo rm debian-zybo-rootfs/usr/bin/qemu-arm-static
+sudo rm -rf /media/yongsh/rootfs/*
+sudo cp -r ~/debian-zybo-rootfs/* /media/yongsh/rootfs/ 
+sync
+
+
+
+########### insert SD card to Zubo Z7 , log in as root ####
+
+
+useradd -m yongsh
+usermod --shell /bin/bash yongsh
+passwd yongsh
+
+
+usermod -aG sudo yongsh
+chown root:root /usr/bin/sudo
+chmod 4755 /usr/bin/sudo
+
+sudo dpkg-reconfigure tzdata
+ntpdate  pool.ntp.org
+date
+################# to update rootfs on SD card (comp and decomp from tar file). Not following above commands #############################
+
+cd /media/yongsh/rootfs
+sudo tar cvf debian116back.tar .
+sudo mv debian116back.tar ~
+cd ~
+sync
+
+
+sudo tar -xvf debian116back.tar -C /media/yongsh/rootfs
+sudo tar -xvf debian116back.tar -C ~/debian-zybo-rootfs
+sync 
+
+sudo cp -r ~/debian-zybo-rootfs/* /media/yongsh/rootfs
+sync
+
+# there is 1 issue for python3.11 and binfmt. However, for python3.10 , this issue doesn't exist.
