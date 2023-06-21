@@ -43,7 +43,7 @@ apt update
 apt install locales dialog
 dpkg-reconfigure locales
 
-apt install lsb-release gcc vim openssh-server ntp ntpdate sudo ifupdown resolvconf net-tools udev iputils-ping wget dosfstools unzip binutils libatomic1 v4l-utils yavta curl snapd  lm-sensors software-properties-common
+apt install lsb-release gcc vim openssh-server ntp ntpdate sudo ifupdown resolvconf net-tools udev iputils-ping wget dosfstools unzip binutils libatomic1 v4l-utils yavta curl snapd  lm-sensors software-properties-common usbutils tmux htop
 curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh |  bash
 apt-get install speedtest
 
@@ -61,23 +61,12 @@ iface end0 inet6 dhcp
 EOF
 cat  /etc/network/interfaces 
 
-cat > /etc/network/interfaces << EOF
-source /etc/network/interfaces.d/*
-auto eth0
-allow-hotplug eth0
-iface eth0 inet static
-  address 192.168.0.33
-  netmask 255.255.255.0
-  gateway 192.168.0.1
-iface eth0 inet6 dhcp
-EOF
-cat  /etc/network/interfaces 
 
 
 echo Zybo-Z7-20 > /etc/hostname
 cat /etc/hostname
 
-cat >  /etc/hosts << EOF
+cat >>  /etc/hosts << EOF
 127.0.1.1 Zybo-Z7-20 zybo
 EOF
 cat   /etc/hosts 
@@ -96,7 +85,7 @@ sync
 
 
 
-########### insert SD card to Zubo Z7 , log in as root ####
+########### insert SD card to Zubo Z7 , log in as root #####################
 
 
 useradd -m yongsh
@@ -111,6 +100,7 @@ chmod 4755 /usr/bin/sudo
 sudo dpkg-reconfigure tzdata
 ntpdate  pool.ntp.org
 date
+
 ################# to update rootfs on SD card (comp and decomp from tar file). Not following above commands #############################
 
 cd /media/yongsh/rootfs
@@ -124,7 +114,5 @@ sudo tar -xvf debian116back.tar -C /media/yongsh/rootfs
 sudo tar -xvf debian116back.tar -C ~/debian-zybo-rootfs
 sync 
 
-sudo cp -r ~/debian-zybo-rootfs/* /media/yongsh/rootfs
-sync
 
 # there is 1 issue for python3.11 and binfmt. However, for python3.10 , this issue doesn't exist.

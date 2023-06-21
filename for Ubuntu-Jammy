@@ -48,17 +48,6 @@ apt-get install speedtest
 
 passwd # MUST change root's password here, otherwise, can not log in as root...
 
-cat > /etc/network/interfaces << EOF
-source /etc/network/interfaces.d/*
-auto end0
-allow-hotplug end0
-iface end0 inet static
-  address 192.168.0.33
-  netmask 255.255.255.0
-  gateway 192.168.0.1
-iface end0 inet6 dhcp
-EOF
-cat  /etc/network/interfaces 
 
 cat > /etc/network/interfaces << EOF
 source /etc/network/interfaces.d/*
